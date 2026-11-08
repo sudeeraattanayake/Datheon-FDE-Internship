@@ -218,3 +218,20 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Datheon FDE Internship
+.venv/
+.env.*
+!.env.example
+
+# Vector Database
+chroma_db/
+chroma.sqlite3
+
+# Generated Data
+**/data/processed/
+**/benchmarks/results/
+
+# Local Logs
+logs/
+*.log
