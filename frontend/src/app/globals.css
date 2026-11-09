@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+:root {
+  --background: #070c18;
+  --foreground: #edf4ff;
+  --surface: #101a2c;
+  --surface-hover: #17243a;
+  --border: #23334c;
+  --muted: #8fa3bd;
+  --primary: #38bdf8;
+  --accent: #818cf8;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: Arial, Helvetica, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 15% 0%,
+      rgba(37, 99, 235, 0.13),
+      transparent 42%),
+    radial-gradient(ellipse at 90% 15%,
+      rgba(129, 140, 248, 0.08),
+      transparent 35%);
+}
+
+::selection {
+  background: rgba(56, 189, 248, 0.3);
+  color: #fff;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0b1220;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334765;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #47648c;
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+}
+
+.glass-panel {
+  background: rgba(16, 26, 44, 0.82);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  backdrop-filter: blur(18px);
+}
+
+.gradient-text {
+  background: linear-gradient(110deg,
+      #f8fbff 10%,
+      #67e8f9 55%,
+      #818cf8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.gradient-button {
+  background: linear-gradient(110deg,
+      #0284c7,
+      #2563eb 55%,
+      #6366f1);
+  color: #fff;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.gradient-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 28px rgba(37, 99, 235, 0.3);
+}
+
+.input-field {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #0b1424;
+  color: #edf4ff;
+  padding: 12px 14px;
+  transition: border-color 0.2s ease;
+}
+
+.input-field:focus {
+  border-color: #38bdf8;
+}
+
+.input-field::placeholder {
+  color: #657992;
+}

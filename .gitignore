@@ -235,3 +235,22 @@ chroma.sqlite3
 # Local Logs
 logs/
 *.log
+
+# Next.js
+**/node_modules/
+**/.next/
+**/out/
+**/.turbo/
+**/next-env.d.ts
+
+# Frontend environment
+**/.env
+**/.env.*
+!**/.env.example
+
+# Build cache
+**/*.tsbuildinfo
+
+# OS files
+.DS_Store
+Thumbs.db
