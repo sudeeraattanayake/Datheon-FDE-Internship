@@ -1,0 +1,10 @@
+__pycache__/
+.pytest_cache/
+.venv/
+.env
+.env.*
+!.env.example
+frontend/node_modules/
+frontend/.next/
+data/chroma_db/
+data/users.json
