@@ -19,24 +19,16 @@ class EnterpriseVectorStore:
         persist_directory: str | Path = "data/processed/chroma_db",
         collection_name: str = "enterprise_documents",
     ) -> None:
-
-        if (
-            not isinstance(collection_name, str)
-            or not collection_name.strip()
-        ):
-            raise ValueError(
-                "collection_name must not be empty"
-            )
+        if not isinstance(collection_name, str) or not collection_name.strip():
+            raise ValueError("collection_name must not be empty")
 
         self.client = chromadb.PersistentClient(
             path=str(persist_directory)
         )
 
-        self.collection = (
-            self.client.get_or_create_collection(
-                name=collection_name,
-                metadata={"hnsw:space": "cosine"},
-            )
+        self.collection = self.client.get_or_create_collection(
+            name=collection_name,
+            metadata={"hnsw:space": "cosine"},
         )
 
         logger.info(
@@ -46,7 +38,6 @@ class EnterpriseVectorStore:
 
     @staticmethod
     def _validate_batch_size(batch_size: int) -> None:
-
         if (
             isinstance(batch_size, bool)
             or not isinstance(batch_size, int)
@@ -57,11 +48,27 @@ class EnterpriseVectorStore:
             )
 
     @staticmethod
+    def _content_key(
+        text: str,
+        metadata: dict[str, Any],
+    ) -> str:
+        normalized_text = " ".join(text.split())
+
+        identity = (
+            normalized_text,
+            metadata["department"],
+            metadata["access_tier"],
+        )
+
+        return hashlib.sha256(
+            repr(identity).encode("utf-8")
+        ).hexdigest()
+
+    @classmethod
     def _prepare_document(
+        cls,
         document: Document,
     ) -> tuple[str, dict[str, Any], str]:
-        """Validate and prepare a document for indexing."""
-
         if not isinstance(document.text, str):
             raise ValueError(
                 "Document text must be a string"
@@ -72,9 +79,7 @@ class EnterpriseVectorStore:
                 "Cannot index an empty document"
             )
 
-        metadata = validate_metadata(
-            document.metadata
-        )
+        metadata = validate_metadata(document.metadata)
 
         clean_metadata = {
             key: value
@@ -82,14 +87,10 @@ class EnterpriseVectorStore:
             if isinstance(value, (str, int, float, bool))
         }
 
-        payload = (
-            document.text
-            + repr(sorted(clean_metadata.items()))
+        document_id = cls._content_key(
+            document.text,
+            clean_metadata,
         )
-
-        document_id = hashlib.sha256(
-            payload.encode("utf-8")
-        ).hexdigest()
 
         return (
             document.text,
@@ -102,39 +103,31 @@ class EnterpriseVectorStore:
         documents: list[Document],
         batch_size: int = 32,
     ) -> int:
-        """Upsert document chunks using deterministic IDs."""
+        """Index documents using stable content identities."""
 
         self._validate_batch_size(batch_size)
 
         if not documents:
             return 0
 
-        # Validate every document before writing any batches.
         prepared = [
             self._prepare_document(document)
             for document in documents
         ]
 
-        for start in range(
-            0,
-            len(prepared),
-            batch_size,
-        ):
-            batch = prepared[
-                start:start + batch_size
-            ]
+        unique_documents = {
+            document_id: (text, metadata, document_id)
+            for text, metadata, document_id in prepared
+        }
 
-            texts = [
-                item[0] for item in batch
-            ]
+        prepared = list(unique_documents.values())
 
-            metadatas = [
-                item[1] for item in batch
-            ]
+        for start in range(0, len(prepared), batch_size):
+            batch = prepared[start:start + batch_size]
 
-            ids = [
-                item[2] for item in batch
-            ]
+            texts = [item[0] for item in batch]
+            metadatas = [item[1] for item in batch]
+            ids = [item[2] for item in batch]
 
             embeddings = generate_embeddings(
                 texts,
@@ -148,7 +141,6 @@ class EnterpriseVectorStore:
                     metadatas=metadatas,
                     embeddings=embeddings,
                 )
-
             except Exception:
                 logger.exception(
                     "Failed to index batch starting at %d",
@@ -170,31 +162,16 @@ class EnterpriseVectorStore:
         access_tier: str,
         n_results: int = 5,
     ) -> list[dict[str, Any]]:
-        """Search vectors with department and access-tier filters."""
+        """Search with metadata filters and deduplicated results."""
 
-        if (
-            not isinstance(query, str)
-            or not query.strip()
-        ):
-            raise ValueError(
-                "Query must not be empty"
-            )
+        if not isinstance(query, str) or not query.strip():
+            raise ValueError("Query must not be empty")
 
-        if (
-            not isinstance(department, str)
-            or not department.strip()
-        ):
-            raise ValueError(
-                "Department is required"
-            )
+        if not isinstance(department, str) or not department.strip():
+            raise ValueError("Department is required")
 
-        if (
-            not isinstance(access_tier, str)
-            or not access_tier.strip()
-        ):
-            raise ValueError(
-                "Access tier is required"
-            )
+        if not isinstance(access_tier, str) or not access_tier.strip():
+            raise ValueError("Access tier is required")
 
         if (
             isinstance(n_results, bool)
@@ -210,56 +187,69 @@ class EnterpriseVectorStore:
         if total_documents == 0:
             return []
 
-        query_embedding = generate_embeddings(
-            [query]
-        )[0]
-
-        results = self.collection.query(
-            query_embeddings=[query_embedding],
-            n_results=min(
-                n_results,
-                total_documents,
-            ),
-            where={
-                "$and": [
-                    {
-                        "department": {
-                            "$eq": department
-                        }
-                    },
-                    {
-                        "access_tier": {
-                            "$eq": access_tier
-                        }
-                    },
-                ]
-            },
-            include=[
-                "documents",
-                "metadatas",
-                "distances",
-            ],
-        )
+        query_embedding = generate_embeddings([query])[0]
 
         matches: list[dict[str, Any]] = []
+        seen: set[str] = set()
 
-        texts = results["documents"][0]
-        metadatas = results["metadatas"][0]
-        distances = results["distances"][0]
+        fetch_limit = min(
+            total_documents,
+            max(n_results * 3, 20),
+        )
 
-        for text, metadata, distance in zip(
-            texts,
-            metadatas,
-            distances,
-        ):
-            matches.append(
-                {
-                    "text": text,
-                    "metadata": metadata,
-                    "cosine_distance": float(
-                        distance
-                    ),
-                }
+        while True:
+            results = self.collection.query(
+                query_embeddings=[query_embedding],
+                n_results=fetch_limit,
+                where={
+                    "$and": [
+                        {"department": {"$eq": department}},
+                        {"access_tier": {"$eq": access_tier}},
+                    ]
+                },
+                include=[
+                    "documents",
+                    "metadatas",
+                    "distances",
+                ],
+            )
+
+            texts = results["documents"][0]
+            metadatas = results["metadatas"][0]
+            distances = results["distances"][0]
+
+            for text, metadata, distance in zip(
+                texts,
+                metadatas,
+                distances,
+            ):
+                key = self._content_key(text, metadata)
+
+                if key in seen:
+                    continue
+
+                seen.add(key)
+
+                matches.append(
+                    {
+                        "text": text,
+                        "metadata": metadata,
+                        "cosine_distance": float(distance),
+                    }
+                )
+
+                if len(matches) >= n_results:
+                    return matches
+
+            if fetch_limit >= total_documents:
+                break
+
+            if len(texts) < fetch_limit:
+                break
+
+            fetch_limit = min(
+                total_documents,
+                fetch_limit * 2,
             )
 
         return matches

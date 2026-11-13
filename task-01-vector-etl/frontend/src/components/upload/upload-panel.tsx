@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import type { FormEvent, KeyboardEvent, DragEvent } from "react";
 import Link from "next/link";
 import {
     ArrowLeft,
@@ -17,15 +18,6 @@ import type { IngestionResponse } from "@/types";
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_EXTENSIONS = ["pdf", "csv", "md"];
 
-function getLocalDate(): string {
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-
-    return `${year}-${month}-${day}`;
-}
-
 export default function UploadPanel() {
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -39,10 +31,6 @@ export default function UploadPanel() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [result, setResult] = useState<IngestionResponse | null>(null);
-
-    useEffect(() => {
-        setDocumentDate(getLocalDate());
-    }, []);
 
     function selectFile(nextFile: File | null) {
         setError("");
@@ -61,7 +49,7 @@ export default function UploadPanel() {
         if (!ALLOWED_EXTENSIONS.includes(extension ?? "")) {
             setFile(null);
             setError(
-                "Unsupported file format. Please upload PDF, CSV or Markdown.",
+                "Unsupported file format. Please upload PDF, CSV or Markdown."
             );
             return;
         }
@@ -91,9 +79,26 @@ export default function UploadPanel() {
         }
     }
 
-    async function handleSubmit(
-        event: React.FormEvent<HTMLFormElement>,
-    ) {
+    function handleDrop(event: DragEvent<HTMLDivElement>) {
+        event.preventDefault();
+        setDragging(false);
+
+        if (!loading) {
+            selectFile(event.dataTransfer.files[0] ?? null);
+        }
+    }
+
+    function handleKeyboard(event: KeyboardEvent<HTMLDivElement>) {
+        if (
+            !loading &&
+            (event.key === "Enter" || event.key === " ")
+        ) {
+            event.preventDefault();
+            inputRef.current?.click();
+        }
+    }
+
+    async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
         if (loading) return;
@@ -132,7 +137,7 @@ export default function UploadPanel() {
             setError(
                 err instanceof Error
                     ? err.message
-                    : "Document ingestion failed. Please try again.",
+                    : "Document ingestion failed. Please try again."
             );
         } finally {
             setLoading(false);
@@ -178,15 +183,7 @@ export default function UploadPanel() {
                     onClick={() => {
                         if (!loading) inputRef.current?.click();
                     }}
-                    onKeyDown={(event) => {
-                        if (
-                            !loading &&
-                            (event.key === "Enter" || event.key === " ")
-                        ) {
-                            event.preventDefault();
-                            inputRef.current?.click();
-                        }
-                    }}
+                    onKeyDown={handleKeyboard}
                     onDragOver={(event) => {
                         event.preventDefault();
                         if (!loading) setDragging(true);
@@ -195,14 +192,7 @@ export default function UploadPanel() {
                         event.preventDefault();
                         setDragging(false);
                     }}
-                    onDrop={(event) => {
-                        event.preventDefault();
-                        setDragging(false);
-
-                        if (!loading) {
-                            selectFile(event.dataTransfer.files[0] ?? null);
-                        }
-                    }}
+                    onDrop={handleDrop}
                     className={`rounded-2xl border-2 border-dashed p-10 text-center transition ${loading
                         ? "cursor-not-allowed opacity-60"
                         : "cursor-pointer"
@@ -255,10 +245,7 @@ export default function UploadPanel() {
                     <div className="flex items-center justify-between gap-4 rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4">
                         <div className="flex min-w-0 items-center gap-3">
                             <div className="rounded-xl bg-cyan-500/10 p-3">
-                                <FileText
-                                    size={23}
-                                    className="text-cyan-400"
-                                />
+                                <FileText size={23} className="text-cyan-400" />
                             </div>
 
                             <div className="min-w-0">
@@ -327,7 +314,9 @@ export default function UploadPanel() {
                                 <option value="confidential">
                                     Confidential
                                 </option>
-                                <option value="restricted">Restricted</option>
+                                <option value="restricted">
+                                    Restricted
+                                </option>
                             </select>
                         </label>
 
