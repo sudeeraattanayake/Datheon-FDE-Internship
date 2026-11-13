@@ -1,10 +1,33 @@
+
+# Python
 __pycache__/
+*.py[cod]
 .pytest_cache/
 .venv/
+venv/
+
+# Environment variables and secrets
 .env
 .env.*
 !.env.example
-frontend/node_modules/
-frontend/.next/
+**/.env
+**/.env.*
+!**/.env.example
+
+# Frontend
+**/node_modules/
+**/.next/
+**/out/
+**/.turbo/
+
+# Local databases
 data/chroma_db/
 data/users.json
+**/data/chroma_db/
+**/data/users.json
+
+# Logs and temporary files
+*.log
+*.tmp
+.DS_Store
+Thumbs.db

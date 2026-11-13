@@ -4,10 +4,10 @@ from pathlib import Path
 from src.security import password_hash
 
 users = {
- "alice": {"password": "AliceDemo123!", "tenant_id": "acme", "department": "HR", "role": "employee"},
- "manager": {"password": "ManagerDemo123!", "tenant_id": "acme", "department": "HR", "role": "manager"},
- "admin": {"password": "AdminDemo123!", "tenant_id": "acme", "department": "IT", "role": "admin"},
- "other": {"password": "OtherDemo123!", "tenant_id": "globex", "department": "HR", "role": "admin"},
+    "alice": {"password": "AliceDemo123!", "tenant_id": "acme", "department": "HR", "role": "employee"},
+    "manager": {"password": "ManagerDemo123!", "tenant_id": "acme", "department": "HR", "role": "manager"},
+    "admin": {"password": "AdminDemo123!", "tenant_id": "acme", "department": "IT", "role": "admin"},
+    "other": {"password": "OtherDemo123!", "tenant_id": "globex", "department": "HR", "role": "admin"},
 }
 for info in users.values():
     info["password_hash"] = password_hash.hash(info.pop("password"))

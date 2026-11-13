@@ -12,28 +12,36 @@ from src.guardrails import grounded_answer
 from src.ingestion import ingest_file
 from src.retrieval import retrieve, rewrite, collection
 from src.security import Identity, Role, issue_token, decode_token, LEVELS, ROLE_MAX
+from dotenv import load_dotenv
+
+load_dotenv()
 
 log = logging.getLogger(__name__)
 app = FastAPI(title="Datheon Task 02 - Secure Enterprise RAG", version="1.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3001", "http://127.0.0.1:3001"],
                    allow_methods=["GET", "POST"], allow_headers=["Authorization", "Content-Type"])
 
+
 class LoginRequest(BaseModel):
     username: str
     password: str
 
+
 class AskRequest(BaseModel):
     question: str = Field(min_length=3, max_length=2000)
     top_k: int = Field(default=5, ge=1, le=10)
+
 
 def current_user(authorization: Annotated[str | None, Header()] = None) -> Identity:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(401, "Bearer token required")
     return decode_token(authorization[7:])
 
+
 @app.get("/health")
 def health():
     return {"status": "healthy", "service": "task02-rag"}
+
 
 @app.post("/auth/login")
 def login(body: LoginRequest):
@@ -42,14 +50,17 @@ def login(body: LoginRequest):
         raise HTTPException(401, "Invalid credentials")
     return {"access_token": issue_token(user), "token_type": "bearer", "user": user.model_dump()}
 
+
 @app.get("/auth/me")
 def me(user: Annotated[Identity, Depends(current_user)]):
     return user
+
 
 @app.get("/stats")
 def stats(user: Annotated[Identity, Depends(current_user)]):
     # Global counts are intentionally not exposed to non-admin users.
     return {"tenant": user.tenant_id, "status": "ready"}
+
 
 @app.post("/documents/upload")
 def upload(file: Annotated[UploadFile, File()],
@@ -77,7 +88,8 @@ def upload(file: Annotated[UploadFile, File()],
                 if total > 10 * 1024 * 1024:
                     raise HTTPException(413, "10MB upload limit")
                 temp.write(data)
-        count = ingest_file(temp_path, name, user.tenant_id, department, access_tier, document_date.isoformat())
+        count = ingest_file(temp_path, name, user.tenant_id,
+                            department, access_tier, document_date.isoformat())
         return {"status": "success", "filename": name, "indexed_chunks": count}
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
@@ -90,6 +102,7 @@ def upload(file: Annotated[UploadFile, File()],
         file.file.close()
         if temp_path is not None:
             temp_path.unlink(missing_ok=True)
+
 
 @app.post("/rag/ask")
 def ask(body: AskRequest, user: Annotated[Identity, Depends(current_user)]):
