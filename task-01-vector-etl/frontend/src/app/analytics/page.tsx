@@ -1,4 +1,3 @@
-
 import Link from "next/link";
 import { ArrowLeft, BarChart3, Database, Gauge, Timer } from "lucide-react";
 import BenchmarkChart from "@/components/analytics/benchmark-chart";
