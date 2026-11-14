@@ -3,7 +3,7 @@
 
 **Enterprise AI Engineering | Vector ETL • Secure RAG • Agentic AI • MLOps**
 
-A portfolio of four enterprise-focused AI engineering projects developed as part of the **Datheon Forward Deployed Engineering Internship**.
+An enterprise AI engineering portfolio developed as part of the **Datheon Forward Deployed Engineering Internship**, featuring three implemented projects and a fourth deployment-focused task in progress.
 
 This repository demonstrates practical approaches to building enterprise document pipelines, secure retrieval-augmented generation (RAG) systems, autonomous AI agents, and deployable AI services.
 
@@ -13,8 +13,8 @@ This repository demonstrates practical approaches to building enterprise documen
 |------|---------|--------|
 | 01 | Enterprise Vector ETL Pipeline | Completed |
 | 02 | Enterprise Multi-Tenant RAG System | Implemented — Final Review |
-| 03 | Autonomous ERP/CRM AI Agent | Upcoming |
-| 04 | Dockerized AI Microservice | Upcoming |
+| 03 | Autonomous ERP/CRM AI Agent | Completed — 13/13 tests passed |
+| 04 | Dockerized AI Microservice | Starter prepared — deployment not verified |
 
 ---
 
@@ -492,67 +492,83 @@ The retrieval pipeline implements dense vector retrieval with cross-encoder rera
 
 ## Task 03 — Autonomous ERP/CRM AI Agent
 
-**Status: Upcoming**
+**Status: Implemented — 13/13 automated API tests passed**
 
-This project will focus on building an autonomous AI agent capable of interacting with simulated enterprise business systems.
+A full-stack enterprise field agent that uses tool-driven workflows to interact with simulated ERP, CRM, and support systems. It demonstrates business-data retrieval, controlled write operations, human-in-the-loop approvals, and execution auditing.
 
-### Planned Capabilities
+### Key Features
 
-- Agentic business workflows
-- Mock ERP and CRM REST integrations
-- Tool-calling agents
-- Business data retrieval and updates
-- Human-in-the-loop approvals
-- Retry and recovery mechanisms
-- Execution audit trails
-- Structured workflow state
-- API-based orchestration
-- Automated testing
+- AI agent workflow orchestration and tool calling
+- Mock enterprise inventory lookup, CRM lead updates, and support ticket creation
+- Input validation and business operation checks
+- Human approval requests before sensitive write operations
+- Approval and rejection workflows
+- Execution traces and audit history
+- FastAPI backend with an interactive Next.js dashboard
+- Automated API tests for inventory, leads, tickets, approvals, audit, and statistics
 
-### Planned Architecture
+### Demonstrated Workflows
+
+| Scenario | Observed Result |
+|----------|-----------------|
+| Check stock and price of `LAP-001` | Retrieved Business Laptop inventory: 25 units, $1,200 |
+| Update `LEAD-001` to `qualified` | Pending approval generated; approved update reflected in CRM |
+| Create high-priority support ticket | Ticket `TKT-36D780E654` created for a laptop power issue |
+| Validate approval controls | Pending, approve, reject, duplicate-denial, and invalid-status API cases passed |
+
+These are local demonstration scenarios using mock enterprise data, not real customer transactions.
+
+### Architecture
 
 ```text
 Business User
-      |
-      v
-Agent Interface
-      |
-      v
-LLM Reasoning Layer
-      |
-      v
-Workflow Orchestrator
-      |
-      v
-Tool Selection
-      |
-      v
-ERP / CRM REST APIs
-      |
-      v
-Approval and Validation
-      |
-      v
-Business Operation
-      |
-      v
-Audit Trail
-      |
-      v
-Execution Result
+    |
+    v
+Next.js Agent Workspace
+    |
+    v
+FastAPI Agent Service
+    |
+    v
+Workflow Orchestration + Tool Selection
+    |
+    +--> ERP Inventory Lookup
+    +--> CRM Lead Management
+    +--> Support Ticket Operations
+    |
+    v
+Validation + Human Approval for Sensitive Writes
+    |
+    v
+Business Operation + Audit Trail
+    |
+    v
+Execution Trace + Dashboard Response
 ```
 
-Implementation details may change during development.
+### Validation
+
+**13/13 Pytest API tests passed**, covering health, inventory, missing inventory, lead operations, approval lifecycle, ticket approval, duplicate denial, invalid status, audit history, statistics, and pending requests.
+
+### Local Development
+
+From `task-03-autonomous-erp-crm-agent/`, install dependencies from `requirements.txt`, configure environment variables using `.env.example`, and refer to the task-specific README for current startup commands.
+
+**Demonstrated local ports:** FastAPI `8002`, Next.js `3003`.
+
+### Task 03 Documentation
+
+[View Task 03 Source Code and Documentation](task-03-autonomous-erp-crm-agent/README.md)
 
 ---
 
 ## Task 04 — Dockerized AI Microservice
 
-**Status: Upcoming**
+**Status: Starter implementation prepared locally — Docker deployment not verified**
 
-This project will focus on packaging and operating an AI-powered service using containerization and deployment-oriented engineering practices.
+This project focuses on packaging and operating an AI-powered service using containerization and deployment-oriented engineering practices.
 
-### Planned Capabilities
+### Deployment Scope
 
 - Docker containerization
 - Docker Compose
@@ -565,7 +581,7 @@ This project will focus on packaging and operating an AI-powered service using c
 - Deployment documentation
 - Service testing
 
-### Planned Architecture
+### Target Architecture
 
 ```text
 API Client
@@ -585,6 +601,10 @@ Structured API Response
      v
 Monitoring and Metrics
 ```
+
+---
+
+The initial Task 04 scaffold includes Docker Compose, FastAPI gateway, Prometheus monitoring, health endpoints, benchmarks, tests, and documentation. The Docker Engine did not start on the development machine, so container startup, production readiness, and measured deployment latency are **not verified**. Integration with the actual Task 01–03 APIs also remains outstanding. The local Task 04 folder is not yet part of the confirmed GitHub submission.
 
 ---
 
@@ -620,11 +640,20 @@ Datheon-FDE-Internship/
 |   |-- bootstrap.py
 |   |-- requirements.txt
 |
+|-- task-03-autonomous-erp-crm-agent/
+|   |-- agent/
+|   |-- api/
+|   |-- frontend/
+|   |-- services/
+|   |-- tests/
+|   |-- README.md
+|   |-- requirements.txt
+|
 |-- .gitignore
 |-- README.md
 ```
 
-Task 03 and Task 04 directories will be added as their implementations progress.
+Task 04 is currently a separate local starter project and is not included in this confirmed repository structure.
 
 Local virtual environments, generated caches, credentials, and persistent development databases are excluded from version control.
 
@@ -651,18 +680,19 @@ This internship portfolio emphasizes:
 
 ## Project Validation Summary
 
-| Validation | Task 01 | Task 02 |
-|------------|---------|---------|
-| Python tests | 30 passed | 7 passed |
-| Frontend lint | Passed | 0 errors, 1 warning |
-| Production build | Passed | Passed |
-| API implementation | Implemented | Implemented |
-| Document ingestion | Tested | Tested |
-| Vector retrieval | Tested | Tested |
-| Authentication | Not implemented as a security boundary | JWT implemented |
-| Tenant isolation | Not implemented as a security boundary | Tested |
-| Grounded LLM answers | Not a Task 01 requirement | Tested |
-| Source citations | Not a Task 01 requirement | Tested |
+| Validation | Task 01 | Task 02 | Task 03 |
+|------------|---------|---------|---------|
+| Python tests | 30 passed | 7 security tests passed | 13 API tests passed |
+| Frontend lint | Passed | 0 errors, 1 warning | Not independently verified |
+| Production build | Passed | Passed | Not independently verified |
+| API implementation | Implemented | Implemented | Implemented |
+| Document ingestion | Tested | Tested | Not applicable |
+| Vector retrieval | Tested | Tested | Not applicable |
+| Authentication | Not implemented as a security boundary | JWT implemented | Not independently verified as production security |
+| Tenant isolation | Not implemented as a security boundary | Tested | Not applicable |
+| Grounded LLM answers | Not a Task 01 requirement | Tested | Not independently evaluated |
+| Source citations | Not a Task 01 requirement | Tested | Not applicable |
+| Human-in-the-loop approval | Not applicable | Not applicable | Demonstrated |
 
 These results describe local development validation rather than independent production certification.
 
@@ -684,7 +714,7 @@ The projects in this repository are educational and engineering demonstrations.
 
 Task 01 metadata filtering is not a substitute for authenticated authorization.
 
-Task 02 adds JWT authentication, tenant-aware retrieval, RBAC restrictions, and grounded answer generation. These controls require further hardening and independent evaluation before production use with sensitive enterprise data.
+Task 02 adds JWT authentication, tenant-aware retrieval, RBAC restrictions, and grounded answer generation. Task 03 adds approval-gated business operations and audit traces. These controls require further hardening and independent evaluation before production use with sensitive enterprise data.
 
 Never upload real credentials, private customer records, or confidential enterprise documents into public repositories.
 
