@@ -254,3 +254,11 @@ logs/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Task 03 / Task 04
+**/__pycache__/
+**/.pytest_cache/
+**/data/*.db
+**/data/*.sqlite3
+**/benchmark-results/
+**/coverage/
